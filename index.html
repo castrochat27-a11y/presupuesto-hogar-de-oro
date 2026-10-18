@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hogar de Oro · Presupuesto y Materiales</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="estilo.css?v=1">
+</head>
+<body>
+
+<!-- ===================== PANTALLA DE INGRESO ===================== -->
+<div id="pantalla-login" class="login-fondo">
+  <form class="login-caja" id="form-login">
+    <img src="logo.png?v=1" alt="Hogar de Oro" class="login-logo">
+    <h1>Presupuesto y Materiales</h1>
+    <p class="login-nota">Ingrese con el usuario del equipo.</p>
+
+    <div class="campo">
+      <label for="login-correo">Correo</label>
+      <input type="email" id="login-correo" autocomplete="username" required placeholder="correo@ejemplo.com">
+    </div>
+
+    <div class="campo">
+      <label for="login-clave">Contraseña</label>
+      <input type="password" id="login-clave" autocomplete="current-password" required placeholder="••••••••">
+    </div>
+
+    <button type="submit" class="btn-principal" id="btn-entrar">Entrar</button>
+    <p class="login-error oculto" id="login-error"></p>
+  </form>
+</div>
+
+<!-- ===================== APLICACIÓN ===================== -->
+<div id="aplicacion" class="oculto">
+
+<header class="cabecera">
+  <div class="cabecera-interna">
+    <img src="logo.png?v=1" alt="Hogar de Oro" class="logo">
+    <div class="titulos">
+      <h1>Presupuesto y Materiales</h1>
+      <p>Hogar de Oro · Pasillo</p>
+    </div>
+    <div class="cabecera-acciones">
+      <button class="btn-principal" id="btn-ingreso">Registrar ingreso</button>
+      <button class="btn-secundario" id="btn-carta">Generar carta</button>
+      <button class="btn-excel" id="btn-excel">Descargar Excel</button>
+      <button class="btn-salir" id="btn-salir">Salir</button>
+    </div>
+  </div>
+</header>
+
+<main class="contenedor">
+
+  <div id="aviso-conexion" class="aviso-bd oculto"></div>
+
+  <!-- ===== Resumen ===== -->
+  <section class="tarjetas-resumen">
+    <div class="tarjeta">
+      <span class="numero" id="r-presupuesto">₡0</span>
+      <span class="etiqueta">Presupuesto total</span>
+    </div>
+    <div class="tarjeta">
+      <span class="numero" id="r-donado">₡0</span>
+      <span class="etiqueta">Donado (valor estimado)</span>
+    </div>
+    <div class="tarjeta">
+      <span class="numero" id="r-comprado">₡0</span>
+      <span class="etiqueta">Gastado en compras</span>
+    </div>
+    <div class="tarjeta destacada">
+      <span class="numero" id="r-pendiente">₡0</span>
+      <span class="etiqueta" id="r-pendiente-txt">Falta por cubrir</span>
+    </div>
+  </section>
+
+  <section class="avance-general">
+    <div class="avance-texto">
+      <strong id="av-titulo">Materiales cubiertos</strong>
+      <span id="av-detalle"></span>
+    </div>
+    <div class="barra grande"><span id="av-barra" style="width:0%"></span></div>
+  </section>
+
+  <!-- ===== Pestañas ===== -->
+  <nav class="pestanas" id="pestanas">
+    <button class="pestana activa" data-pestana="materiales">Materiales <span class="conteo" id="n-materiales">0</span></button>
+    <button class="pestana" data-pestana="presupuesto">Presupuesto</button>
+    <button class="pestana" data-pestana="ingresos">Ingresos <span class="conteo" id="n-ingresos">0</span></button>
+    <button class="pestana" data-pestana="solicitudes">Solicitudes <span class="conteo" id="n-solicitudes">0</span></button>
+  </nav>
+
+  <!-- ===== Materiales ===== -->
+  <section class="caja caja-tabla" id="vista-materiales">
+    <div class="filtros">
+      <input type="search" id="f-buscar" placeholder="Buscar material">
+      <select id="f-estado">
+        <option value="">Todos los materiales</option>
+        <option value="falta">Les falta cantidad</option>
+        <option value="completo">Completos</option>
+        <option value="solicitud">Con solicitud abierta</option>
+      </select>
+      <button class="btn-secundario mini" id="btn-agregar-material">Agregar material</button>
+    </div>
+    <div class="chips" id="chips-capitulo"></div>
+
+    <div class="barra-marcados oculto" id="barra-marcados">
+      <span id="txt-marcados"></span>
+      <button class="btn-principal mini" id="btn-carta-marcados">Generar carta con los marcados</button>
+      <button class="btn-texto" id="btn-quitar-marcas">Quitar marcas</button>
+    </div>
+
+    <div class="tabla-scroll">
+      <table class="tabla tabla-materiales">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="marcar-todos" title="Marcar los que faltan"></th>
+            <th>Código</th>
+            <th>Material</th>
+            <th>Unidad</th>
+            <th class="num">Requerido</th>
+            <th class="num">Conseguido</th>
+            <th class="num">Faltante</th>
+            <th>Avance</th>
+            <th class="num">Precio unit.</th>
+            <th class="num">Costo presup.</th>
+            <th>Solicitado a</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-materiales"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Presupuesto ===== -->
+  <section class="caja caja-tabla oculto" id="vista-presupuesto">
+    <div class="tabla-scroll">
+      <table class="tabla tabla-presupuesto">
+        <thead>
+          <tr>
+            <th>Rubro</th>
+            <th class="num">Presupuestado</th>
+            <th class="num">Donado</th>
+            <th class="num">Comprado</th>
+            <th class="num">Falta por cubrir</th>
+            <th>Avance</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-presupuesto"></tbody>
+      </table>
+    </div>
+    <p class="nota-pie">Presupuesto del pasillo elaborado por la Arq. Rosaura Molina Vargas. Imprevistos y utilidad se calculan sobre los costos directos.</p>
+  </section>
+
+  <!-- ===== Ingresos ===== -->
+  <section class="caja caja-tabla oculto" id="vista-ingresos">
+    <div class="filtros">
+      <input type="search" id="i-buscar" placeholder="Buscar por material, empresa o persona">
+      <select id="i-tipo">
+        <option value="">Donaciones y compras</option>
+        <option value="Donación">Solo donaciones</option>
+        <option value="Compra">Solo compras</option>
+      </select>
+      <select id="i-area"></select>
+    </div>
+    <div class="tabla-scroll">
+      <table class="tabla tabla-ingresos">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Material o rubro</th>
+            <th class="num">Cantidad</th>
+            <th class="num">Valor</th>
+            <th>Donante o proveedor</th>
+            <th>Área</th>
+            <th>Responsable</th>
+            <th>Observaciones</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-ingresos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Solicitudes ===== -->
+  <section class="caja caja-tabla oculto" id="vista-solicitudes">
+    <div class="filtros">
+      <input type="search" id="s-buscar" placeholder="Buscar empresa, material o responsable">
+      <select id="s-estado"></select>
+    </div>
+    <div class="tabla-scroll">
+      <table class="tabla tabla-solicitudes">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Empresa</th>
+            <th>Materiales solicitados</th>
+            <th>Área</th>
+            <th>Responsable</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-solicitudes"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== Registrar ingreso ===================== -->
+<div class="modal-fondo oculto" id="modal-ingreso">
+  <form class="modal modal-ancho" id="form-ingreso">
+    <h3 id="titulo-ingreso">Registrar ingreso</h3>
+    <input type="hidden" id="g-id">
+
+    <div class="selector-tipo" id="g-tipo">
+      <label><input type="radio" name="tipo" value="Donación" checked> Donación</label>
+      <label><input type="radio" name="tipo" value="Compra"> Compra</label>
+    </div>
+
+    <div class="rejilla">
+      <div class="campo ancho-2">
+        <label for="g-material">¿Qué ingresó? <span class="req">*</span></label>
+        <select id="g-material" required></select>
+        <small class="ayuda" id="g-ayuda-material"></small>
+      </div>
+
+      <div class="campo" id="campo-cantidad">
+        <label for="g-cantidad">Cantidad <span class="req">*</span> <span class="opcional" id="g-unidad"></span></label>
+        <input type="number" id="g-cantidad" min="0" step="any" placeholder="Ej. 10">
+      </div>
+
+      <div class="campo">
+        <label for="g-valor" id="g-rotulo-valor">Valor estimado (₡)</label>
+        <input type="number" id="g-valor" min="0" step="any" placeholder="Ej. 25000">
+        <small class="ayuda" id="g-ayuda-valor"></small>
+      </div>
+
+      <div class="campo ancho-2">
+        <label for="g-origen" id="g-rotulo-origen">Empresa o persona que donó <span class="req">*</span></label>
+        <input type="text" id="g-origen" required list="lista-origenes" placeholder="Ej. Ferretería El Pochote">
+      </div>
+
+      <div class="campo">
+        <label for="g-area">Área <span class="req">*</span></label>
+        <input type="text" id="g-area" required list="lista-areas" placeholder="Ej. Patrocinios">
+      </div>
+
+      <div class="campo">
+        <label for="g-fecha">Fecha</label>
+        <input type="date" id="g-fecha">
+      </div>
+
+      <div class="campo ancho-2">
+        <label for="g-responsable">Responsable <span class="req">*</span></label>
+        <input type="text" id="g-responsable" required list="lista-responsables" placeholder="Nombre completo">
+      </div>
+
+      <div class="campo ancho-2">
+        <label for="g-observaciones">Observaciones</label>
+        <input type="text" id="g-observaciones" placeholder="Ej. Se retira en la tienda el viernes">
+      </div>
+    </div>
+
+    <div class="modal-acciones">
+      <button type="button" class="btn-secundario" id="g-cancelar">Cancelar</button>
+      <button type="submit" class="btn-principal" id="g-guardar">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<!-- ===================== Agregar o editar material ===================== -->
+<div class="modal-fondo oculto" id="modal-material">
+  <form class="modal modal-ancho" id="form-material">
+    <h3 id="titulo-material">Agregar material</h3>
+    <input type="hidden" id="m-id">
+    <div class="rejilla">
+      <div class="campo">
+        <label for="m-codigo">Código</label>
+        <input type="text" id="m-codigo" placeholder="Ej. 3.15">
+      </div>
+      <div class="campo ancho-3">
+        <label for="m-capitulo">Capítulo <span class="req">*</span></label>
+        <input type="text" id="m-capitulo" required list="lista-capitulos">
+      </div>
+      <div class="campo ancho-4">
+        <label for="m-descripcion">Descripción <span class="req">*</span></label>
+        <input type="text" id="m-descripcion" required>
+      </div>
+      <div class="campo">
+        <label for="m-unidad">Unidad <span class="req">*</span></label>
+        <input type="text" id="m-unidad" required placeholder="ud, m2, caja">
+      </div>
+      <div class="campo">
+        <label for="m-cantidad">Cantidad requerida <span class="req">*</span></label>
+        <input type="number" id="m-cantidad" required min="0" step="any">
+      </div>
+      <div class="campo ancho-2">
+        <label for="m-precio">Precio unitario (₡)</label>
+        <input type="number" id="m-precio" min="0" step="any">
+      </div>
+    </div>
+    <div class="modal-acciones">
+      <button type="button" class="btn-peligro oculto" id="m-borrar">Borrar material</button>
+      <span class="espacio"></span>
+      <button type="button" class="btn-secundario" id="m-cancelar">Cancelar</button>
+      <button type="submit" class="btn-principal">Guardar</button>
+    </div>
+  </form>
+</div>
+
+<!-- ===================== Generador de carta ===================== -->
+<div class="modal-fondo oculto" id="modal-carta">
+  <div class="modal modal-carta">
+    <div class="cabecera-caja">
+      <h3>Generar carta de solicitud de materiales</h3>
+      <button type="button" class="btn-texto" id="carta-cerrar">Cerrar</button>
+    </div>
+
+    <div class="carta-columnas">
+      <div class="carta-datos">
+        <div class="campo">
+          <label for="c-empresa">Empresa o persona</label>
+          <input type="text" id="c-empresa" list="lista-origenes" placeholder="Vacío: dice “A quien interese”">
+        </div>
+        <div class="campo">
+          <label for="c-persona">Persona de contacto <span class="opcional">(opcional)</span></label>
+          <input type="text" id="c-persona" placeholder="Ej. Sr. Juan Pérez, Gerente">
+        </div>
+        <div class="campo">
+          <label for="c-fecha">Lugar y fecha</label>
+          <input type="text" id="c-fecha">
+        </div>
+
+        <div class="campo">
+          <div class="rotulo-lista">
+            <label>Materiales a solicitar <span class="req">*</span></label>
+            <span class="acciones-lista">
+              <button type="button" class="btn-texto mini" id="c-marcar-faltan">Marcar los que faltan</button>
+              <button type="button" class="btn-texto mini" id="c-desmarcar">Quitar todos</button>
+            </span>
+          </div>
+          <div class="lista-carta" id="c-lista"></div>
+          <label class="ver-todos"><input type="checkbox" id="c-ver-completos"> Ver también los completos</label>
+          <small class="ayuda">La cantidad sugerida es lo que falta según el presupuesto. Puede cambiar la cantidad o la unidad.</small>
+        </div>
+
+        <div class="registro-carta">
+          <div class="dos-campos">
+            <div class="campo">
+              <label for="c-area">Área que envía</label>
+              <input type="text" id="c-area" list="lista-areas" placeholder="Ej. Patrocinios">
+            </div>
+            <div class="campo">
+              <label for="c-responsable">Responsable</label>
+              <input type="text" id="c-responsable" list="lista-responsables" placeholder="Nombre completo">
+            </div>
+          </div>
+          <small class="ayuda">No salen en la carta. Se piden para guardar la solicitud y saber quién la envió.</small>
+        </div>
+
+        <div class="carta-botones">
+          <button type="button" class="btn-principal" id="c-guardar">Guardar solicitud</button>
+          <button type="button" class="btn-secundario" id="c-word">Descargar en Word</button>
+          <button type="button" class="btn-secundario" id="c-pdf">Descargar en PDF</button>
+          <small class="ayuda" id="c-origen"></small>
+        </div>
+      </div>
+
+      <div class="carta-vista" id="carta-vista"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== Confirmar ===================== -->
+<div class="modal-fondo oculto" id="modal-confirmar">
+  <div class="modal">
+    <h3>Confirmar eliminación</h3>
+    <p id="confirmar-texto">¿Seguro que desea eliminar este registro?</p>
+    <div class="modal-acciones">
+      <button class="btn-secundario" id="confirmar-cancelar">Cancelar</button>
+      <button class="btn-peligro" id="confirmar-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="lista-origenes"></datalist>
+<datalist id="lista-areas"></datalist>
+<datalist id="lista-responsables"></datalist>
+<datalist id="lista-capitulos"></datalist>
+
+<div id="aviso" class="aviso oculto"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
