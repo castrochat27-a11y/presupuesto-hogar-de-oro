@@ -1,0 +1,53 @@
+name: Mantener activa la base de datos
+
+# Supabase pausa los proyectos gratuitos tras 7 días sin actividad.
+# Esta tarea consulta la base de datos cada 3 días para evitarlo.
+# Toma la dirección y la clave de config.js.
+
+on:
+  schedule:
+    - cron: "0 13 */3 * *"   # cada 3 días, 13:00 UTC (7:00 a. m. Costa Rica)
+  workflow_dispatch:          # permite ejecutarla a mano desde la pestaña Actions
+
+jobs:
+  mantener-activa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar los archivos
+        uses: actions/checkout@v4
+
+      - name: Consultar la base de datos
+        run: |
+          BASE=$(grep -oP 'SUPABASE_URL:\s*"\K[^"]+' config.js)
+          CLAVE=$(grep -oP 'SUPABASE_ANON_KEY:\s*"\K[^"]+' config.js)
+          URL="$BASE/rest/v1/keepalive?select=id&limit=1"
+
+          if echo "$BASE$CLAVE" | grep -q "PEGAR"; then
+            echo "Falta poner la dirección y la clave de Supabase en config.js."
+            exit 1
+          fi
+
+          echo "Consultando la base de datos..."
+
+          for intento in 1 2 3; do
+            codigo=$(curl -s -o /tmp/respuesta.txt -w "%{http_code}" --max-time 60 \
+              -H "apikey: $CLAVE" \
+              -H "Authorization: Bearer $CLAVE" \
+              "$URL" || echo "000")
+
+            echo "Intento $intento -> HTTP $codigo"
+
+            if [ "$codigo" = "200" ]; then
+              echo "Respuesta: $(cat /tmp/respuesta.txt)"
+              echo "Base de datos activa. Todo en orden."
+              exit 0
+            fi
+
+            cat /tmp/respuesta.txt || true
+            sleep 20
+          done
+
+          echo ""
+          echo "No se pudo consultar la base de datos."
+          echo "Si el error es 401 o 404, falta correr tablas.sql en Supabase."
+          exit 1
